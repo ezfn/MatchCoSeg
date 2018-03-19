@@ -1,1 +1,1 @@
-Boosting Local Matched with Convolutional Co-Segmentation
+Boosting Local Matches with Convolutional Co-Segmentation
