@@ -1,0 +1,95 @@
+import argparse
+import tensorflow as tf
+import cv2
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+
+
+
+def load_graph(frozen_graph_filename,prefix):
+    # We load the protobuf file from the disk and parse it to retrieve the
+    # unserialized graph_def
+    with tf.gfile.GFile(frozen_graph_filename, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    # Then, we import the graph_def into a new Graph and returns it
+    with tf.Graph().as_default() as graph:
+        # The name var will prefix every op/nodes in your graph
+        # Since we load everything in a new graph, this is not needed
+        tf.import_graph_def(graph_def, name=prefix)
+    return graph
+
+def get_closet_power_of_2(a):
+    return np.power(2, np.uint16(np.log2(a) + 0.5))
+
+
+
+
+if __name__ == '__main__':
+    # Let's allow the user to pass the filename as an argument
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--frozen_model_filename", default="../frozen_graphs/frozen-graph.pb", type=str,
+                        help="Frozen model file to import")
+    parser.add_argument("--patch1_filename", default="../examples/image1.jpg", type=str,
+                        help="a filename for the image of the first patch")
+    parser.add_argument("--patch2_filename", default="../examples/image1_masked.jpg", type=str,
+                        help="a filename for the image of the first patch")
+
+    args = parser.parse_args()
+
+    # We use our "load_graph" function
+    prefix = 'coSeg'
+    graph = load_graph(args.frozen_model_filename,prefix)
+    I1 = np.flip(cv2.imread(args.patch1_filename),axis=2)
+    I2 = np.flip(cv2.imread(args.patch2_filename), axis=2)
+
+    # We can verify that we can access the list of operations in the graph
+    for op in graph.get_operations():
+        print(op.name)
+        # prefix/Placeholder/inputs_placeholder
+        # ...
+        # prefix/Accuracy/predictions
+
+    # We access the input and output nodes
+    output_node = graph.get_tensor_by_name(prefix + '/inference_result/inference_result_1/add:0')
+    input_size_node = graph.get_tensor_by_name(prefix + '/Placeholder:0')
+    input_node_1 = graph.get_tensor_by_name(prefix + '/Placeholder_1:0')
+    input_node_2 = graph.get_tensor_by_name(prefix + '/Placeholder_2:0')
+
+
+    # We launch a Session
+    fig = plt.figure()
+    plt.subplot(131)
+    plt.imshow(I1)
+    plt.subplot(133)
+    plt.imshow(I2)
+    with tf.Session(graph=graph) as sess:
+
+        agreement_map = sess.run(output_node, feed_dict={
+            input_node_1: np.expand_dims(I1, axis=0),input_node_2: np.expand_dims(I2, axis=0),input_size_node:get_closet_power_of_2(I1.shape[0:2])
+            })
+        agreement_map = np.squeeze(agreement_map)
+        agreement_map = cv2.resize(agreement_map,(I1.shape[1],I1.shape[0]))
+
+        plt.subplot(132)
+        plt.imshow(agreement_map,cmap='jet')
+        plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
