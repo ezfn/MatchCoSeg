@@ -17,12 +17,12 @@ import torch.nn.functional as F
 
 from copy import deepcopy
 
-from SparseImgRepresenter import ScaleSpaceAffinePatchExtractor
-from LAF import denormalizeLAFs, LAFs2ell, abc2A
-from Utils import line_prepender
-from architectures import AffNetFast, OriNetFast
-from LAF import extract_patches,extract_patches_np_img,normalizeLAFs
-from pytorch_sift import SIFTNet
+from affnet.SparseImgRepresenter import ScaleSpaceAffinePatchExtractor
+from affnet.LAF import denormalizeLAFs, LAFs2ell, abc2A
+from affnet.Utils import line_prepender
+from affnet.architectures import AffNetFast, OriNetFast
+from affnet.LAF import extract_patches,extract_patches_np_img,normalizeLAFs
+from affnet.pytorch_sift import SIFTNet
 import cv2
 from lifetobot_sdk.Geometry import image_transformations
 

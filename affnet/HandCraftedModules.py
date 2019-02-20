@@ -4,10 +4,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import math
 import numpy as np
-from Utils import  GaussianBlur, CircularGaussKernel
-from LAF import abc2A,rectifyAffineTransformationUpIsUp, sc_y_x2LAFs,sc_y_x_and_A2LAFs
-from Utils import generate_2dgrid, generate_2dgrid, generate_3dgrid
-from Utils import zero_response_at_border
+from affnet.Utils import  GaussianBlur, CircularGaussKernel
+from affnet.LAF import abc2A,rectifyAffineTransformationUpIsUp, sc_y_x2LAFs,sc_y_x_and_A2LAFs
+from affnet.Utils import generate_2dgrid, generate_2dgrid, generate_3dgrid
+from affnet.Utils import zero_response_at_border
 
 
 class ScalePyramid(nn.Module):

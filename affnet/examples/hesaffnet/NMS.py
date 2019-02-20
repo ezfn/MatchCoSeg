@@ -2,8 +2,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from Utils import CircularGaussKernel, generate_2dgrid, generate_2dgrid, generate_3dgrid, zero_response_at_border
-from LAF import sc_y_x2LAFs
+from affnet.Utils import CircularGaussKernel, generate_2dgrid, generate_2dgrid, generate_3dgrid, zero_response_at_border
+from affnet.LAF import sc_y_x2LAFs
  
 class NMS2d(nn.Module):
     def __init__(self, kernel_size = 3, threshold = 0):

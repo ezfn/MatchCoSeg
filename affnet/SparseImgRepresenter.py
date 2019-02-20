@@ -5,10 +5,10 @@ import math
 import torch.nn.functional as F
 from torch.autograd import Variable
 from copy import deepcopy
-from Utils import GaussianBlur, batch_eig2x2, line_prepender, batched_forward
-from LAF import LAFs2ell,abc2A, angles2A, generate_patch_grid_from_normalized_LAFs, extract_patches, get_inverted_pyr_index, denormalizeLAFs, extract_patches_from_pyramid_with_inv_index, rectifyAffineTransformationUpIsUp
-from LAF import get_pyramid_and_level_index_for_LAFs, normalizeLAFs, checkTouchBoundary
-from HandCraftedModules import HessianResp, AffineShapeEstimator, OrientationDetector, ScalePyramid, NMS3dAndComposeA
+from affnet.Utils import GaussianBlur, batch_eig2x2, line_prepender, batched_forward
+from affnet.LAF import LAFs2ell,abc2A, angles2A, generate_patch_grid_from_normalized_LAFs, extract_patches, get_inverted_pyr_index, denormalizeLAFs, extract_patches_from_pyramid_with_inv_index, rectifyAffineTransformationUpIsUp
+from affnet.LAF import get_pyramid_and_level_index_for_LAFs, normalizeLAFs, checkTouchBoundary
+from affnet.HandCraftedModules import HessianResp, AffineShapeEstimator, OrientationDetector, ScalePyramid, NMS3dAndComposeA
 import time
 
 class ScaleSpaceAffinePatchExtractor(nn.Module):

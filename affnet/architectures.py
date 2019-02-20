@@ -12,11 +12,11 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.autograd import Variable
-from Utils import L2Norm, generate_2dgrid
-from Utils import str2bool
-from LAF import denormalizeLAFs, LAFs2ell, abc2A, extract_patches,normalizeLAFs,  get_rotation_matrix
-from LAF import get_LAFs_scales, get_normalized_affine_shape
-from LAF import rectifyAffineTransformationUpIsUp,rectifyAffineTransformationUpIsUpFullyConv
+from affnet.Utils import L2Norm, generate_2dgrid
+from affnet.Utils import str2bool
+from affnet.LAF import denormalizeLAFs, LAFs2ell, abc2A, extract_patches,normalizeLAFs,  get_rotation_matrix
+from affnet.LAF import get_LAFs_scales, get_normalized_affine_shape
+from affnet.LAF import rectifyAffineTransformationUpIsUp,rectifyAffineTransformationUpIsUpFullyConv
 
 class LocalNorm2d(nn.Module):
     def __init__(self, kernel_size = 33):
