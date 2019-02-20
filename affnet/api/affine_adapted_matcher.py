@@ -77,9 +77,9 @@ class AffineMatcher():
                 var_image_reshape1 = var_image_reshape1.cuda()
                 var_image_reshape2 = var_image_reshape2.cuda()
 
-            LAFs1, resp = self.HA(var_image_reshape1)
+            LAFs1, resp = self.HA(var_image_reshape1, do_ori=True)
             sorted_idxs1 = resp.argsort(descending=True)
-            LAFs2, resp2 = self.HA(var_image_reshape2)
+            LAFs2, resp2 = self.HA(var_image_reshape2, do_ori=True)
             sorted_idxs2 = resp2.argsort(descending=True)
             torch_patches1 = extract_patches(var_image_reshape1,
                                              normalizeLAFs(LAFs1[sorted_idxs1, :, :], w=I1.shape[1], h=I1.shape[0]), PS=65,
@@ -99,13 +99,39 @@ class AffineMatcher():
         idxs1 = [sorted_idxs1[match[0].queryIdx] for match in good_matches]
         idxs2 = [sorted_idxs2[match[0].trainIdx] for match in good_matches]
         dists = [match[0].distance for match in good_matches]
+        i1 = [match[0].queryIdx for match in good_matches]
+        i2 = [match[0].trainIdx for match in good_matches]
 
         affine_matches = dict(LAFs1=LAFs1[idxs1, :, :], LAFs2=LAFs2[idxs2, :, :], dists=dists)
-        return affine_matches
+        return affine_matches, torch_patches1[i1, :, :, :], torch_patches2[i2, :, :, :]
 
 if __name__ == '__main__':
     I1 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img1.png')
-    I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
-    aff_matcher = AffineMatcher(do_use_cuda=True)
-    out_dict = aff_matcher.match_images(I1,I2)
+    from lifetobot_sdk.Geometry import image_transformations
+    from lifetobot_sdk.Visualization import drawers as d
+
+    H = [[1.2, 0.1, -100],
+         [-0.19, 1.5, 30],
+         [0, 0, 1]]
+    I2 = image_transformations.homogenous_transform_image(I1, H=H, targetSize=I1.shape[0:2])
+    d.imshow(I2,wait_time=1)
+
+    # I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
+    aff_matcher = AffineMatcher(do_use_cuda=False)
+    out_dict,P1,P2 = aff_matcher.match_images(I1,I2)
+    best_match = np.argmin(out_dict['dists'])
+    A1 = out_dict['LAFs1'][best_match,:,:].numpy()
+    A2 = out_dict['LAFs2'][best_match,:,:].numpy()
+
+
+    from affnet.LAF import get_LAFs_scales
+
+
+    scales1 = get_LAFs_scales(out_dict['LAFs1'])
+    best_match = torch.argmax(scales1)
+    A1 = out_dict['LAFs1'][best_match, :, :].numpy()
+    A2 = out_dict['LAFs2'][best_match, :, :].numpy()
+
+
+
     pass
