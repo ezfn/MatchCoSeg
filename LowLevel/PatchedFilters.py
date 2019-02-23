@@ -8,7 +8,6 @@ def patched_filter(tgtImg, template, corr_tsh):
     result_dict = dict(is_garbage=False, cords= (np.array(tgtImg.shape[::-1])/2).astype(np.int),
                        max_corr=0, errorCorrMat=np.inf*np.matrix(np.ones((2,2))),initialCorrelation = 0)
     QE = 0.75
-    #TODO: check here if the patch is too smooth
     # rejecting homogeneous patch for lack of information
     if (np.sum(np.abs(template - np.mean(template))) <= (3 * template.size)):
         result_dict['is_garbage'] = True

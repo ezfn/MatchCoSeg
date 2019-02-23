@@ -4,3 +4,11 @@
 *.pickle
 
 *.eps
+
+correlation-pytorch-master/*
+
+
+
+*.pyc
+
+*.so

@@ -23,6 +23,16 @@ from affnet.pytorch_sift import SIFTNet
 import cv2
 from lifetobot_sdk.Geometry import image_transformations
 
+try:
+    torch._utils._rebuild_tensor_v2
+except AttributeError:
+    def _rebuild_tensor_v2(storage, storage_offset, size, stride, requires_grad, backward_hooks):
+        tensor = torch._utils._rebuild_tensor(storage, storage_offset, size, stride)
+        tensor.requires_grad = requires_grad
+        tensor._backward_hooks = backward_hooks
+        return tensor
+    torch._utils._rebuild_tensor_v2 = _rebuild_tensor_v2
+
 
 
 
@@ -36,8 +46,8 @@ class AffineMatcher():
         self.SIFT = SIFTNet(patch_size=65, is_cuda=self.use_cuda)
         self.SIFT.eval()
 
-        self.weightd_fname = '/media/Media/SWDEV/repos/MatchCoSeg/affnet/pretrained/AffNet.pth'
-        self.orinet_weightd_fname = '/media/Media/SWDEV/repos/MatchCoSeg/affnet/pretrained/OriNet.pth'
+        self.weightd_fname = 'affnet/pretrained/AffNet.pth'
+        self.orinet_weightd_fname = 'affnet/pretrained/OriNet.pth'
 
         if not self.use_cuda:
             checkpoint = torch.load(self.weightd_fname, map_location=lambda storage, loc: storage)
@@ -106,7 +116,7 @@ class AffineMatcher():
         return affine_matches, torch_patches1[i1, :, :, :], torch_patches2[i2, :, :, :]
 
 if __name__ == '__main__':
-    I1 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img1.png')
+    I1 = cv2.imread('affnet/test-graf/img1.png')
     from lifetobot_sdk.Geometry import image_transformations
     from lifetobot_sdk.Visualization import drawers as d
 
@@ -117,11 +127,11 @@ if __name__ == '__main__':
     d.imshow(I2,wait_time=1)
 
     # I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
-    aff_matcher = AffineMatcher(do_use_cuda=False)
+    aff_matcher = AffineMatcher(do_use_cuda=True)
     out_dict,P1,P2 = aff_matcher.match_images(I1,I2)
     best_match = np.argmin(out_dict['dists'])
-    A1 = out_dict['LAFs1'][best_match,:,:].numpy()
-    A2 = out_dict['LAFs2'][best_match,:,:].numpy()
+    A1 = out_dict['LAFs1'][best_match,:,:].cpu().numpy()
+    A2 = out_dict['LAFs2'][best_match,:,:].cpu().numpy()
 
 
     from affnet.LAF import get_LAFs_scales
@@ -129,8 +139,8 @@ if __name__ == '__main__':
 
     scales1 = get_LAFs_scales(out_dict['LAFs1'])
     best_match = torch.argmax(scales1)
-    A1 = out_dict['LAFs1'][best_match, :, :].numpy()
-    A2 = out_dict['LAFs2'][best_match, :, :].numpy()
+    A1 = out_dict['LAFs1'][best_match, :, :].cpu().numpy()
+    A2 = out_dict['LAFs2'][best_match, :, :].cpu().numpy()
 
 
 
