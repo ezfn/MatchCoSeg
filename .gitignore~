@@ -1,0 +1,10 @@
+
+*.ipynb
+
+*.pickle
+
+*.eps
+
+correlation-pytorch-master/build/lib\.linux-x86_64-2\.7/correlation-pytorch/
+
+correlation-pytorch-master/build/lib\.linux-x86_64-2\.7/correlation_package/_ext/corr/
