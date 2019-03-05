@@ -22,3 +22,5 @@ correlation-pytorch-master/*
 \.idea/vcs\.xml
 
 \.idea/workspace\.xml
+
+\.idea/encodings\.xml
