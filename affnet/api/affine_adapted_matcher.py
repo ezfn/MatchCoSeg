@@ -120,10 +120,6 @@ if __name__ == '__main__':
     from lifetobot_sdk.Geometry import image_transformations
     from lifetobot_sdk.Visualization import drawers as d
 
-    H = [[1.2, 0.1, -100],
-         [-0.19, 1.5, 30],
-         [0, 0, 1]]
-    I2 = image_transformations.homogenous_transform_image(I1, H=H, targetSize=I1.shape[0:2])
     d.imshow(I2,wait_time=1)
 
     # I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
@@ -139,8 +135,11 @@ if __name__ == '__main__':
 
     scales1 = get_LAFs_scales(out_dict['LAFs1'])
     best_match = torch.argmax(scales1)
-    A1 = out_dict['LAFs1'][best_match, :, :].cpu().numpy()
-    A2 = out_dict['LAFs2'][best_match, :, :].cpu().numpy()
+    A1 = out_dict['LAFs1'][best_match, :, :].numpy()
+    A2 = out_dict['LAFs2'][best_match, :, :].numpy()
+    HH = np.matmul(np.vstack((A2, [[0, 0, 1]])), np.linalg.pinv(np.vstack((A1, [[0, 0, 1]]))))
+    I2_hat = image_transformations.homogenous_transform_image(I1, H=HH, targetSize=I1.shape[0:2])
+    d.imshow(I2_hat, window_name='I2h')
 
 
 
