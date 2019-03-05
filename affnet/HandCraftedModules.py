@@ -21,7 +21,7 @@ class ScalePyramid(nn.Module):
         self.minSize = 2 * self.b + 2 + 1;
         return
     def forward(self,x):
-        pixelDistance = 1.0;
+        pixelDistance = 1.0
         curSigma = 0.5
         if self.init_sigma > curSigma:
             sigma = np.sqrt(self.init_sigma**2 - curSigma**2)
