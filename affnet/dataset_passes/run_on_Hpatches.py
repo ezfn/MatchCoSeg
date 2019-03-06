@@ -5,9 +5,10 @@ import cv2
 import scipy.io as sio
 import glob
 import os
-aff_matcher = affine_adapted_matcher.AffineMatcher(do_use_cuda=True)
+aff_matcher = affine_adapted_matcher.AffineMatcher(do_use_cuda=False)
 dirs = glob.glob('/media/rd/MyPassport/CoSegDataPasses/hpatches-sequences-release/v_*')
-for currentDir in dirs:
+bad_dirs = [21]
+for currentDir in dirs[22:]:
     print('In directory: ' + currentDir)
     I1f = os.path.join(currentDir, '1.ppm')
     for otherImgIdx in range(2, 7):
