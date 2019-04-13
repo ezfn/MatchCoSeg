@@ -11,6 +11,25 @@ import math
 def EPE(input_flow, target_flow):
     return torch.norm(target_flow-input_flow,p=2,dim=1).mean()
 
+
+class L1_factored(nn.Module):
+    def __init__(self, args):
+        super(L1_factored, self).__init__()
+        self.factorLoss = torch.nn.BCEWithLogitsLoss()
+        self.args = args
+
+    def forward(self, output, target, factor_map=None):
+        raw_flow_loss = torch.abs((output[:,0:2,:,:] - target[:,0:2,:,:])).mean(dim=1)
+        if factor_map is None:
+            factored_l1_value = (raw_flow_loss * torch.sigmoid(output[:,2,:,:]) * target[:,2,:,:]).mean()
+            factor_error = self.factorLoss(output[:, 2, :, :], target[:, 2, :, :])
+        else:
+            factored_l1_value = (raw_flow_loss * torch.sigmoid(output[:, 2, :, :]) * target[:, 2, :, :] * factor_map).mean()
+            factor_error = self.factorLoss(output[:, 2, :, :]*factor_map, target[:, 2, :, :]*factor_map)
+        loss_value = factored_l1_value + self.args['C'] *factor_error
+        epevalue = EPE(output[:,0:2,:,:], target[:,0:2,:,:])
+        return loss_value, epevalue
+
 class L1(nn.Module):
     def __init__(self):
         super(L1, self).__init__()
@@ -32,8 +51,11 @@ class L1Loss(nn.Module):
         self.loss = L1()
         self.loss_labels = ['L1', 'EPE']
 
-    def forward(self, output, target):
-        lossvalue = self.loss(output, target)
+    def forward(self, output, target, factor_map=None):
+        if factor_map is None:
+            lossvalue = self.loss(output, target)
+        else:
+            lossvalue = self.loss(output*factor_map, target*factor_map)
         epevalue = EPE(output, target)
         return [lossvalue, epevalue]
 

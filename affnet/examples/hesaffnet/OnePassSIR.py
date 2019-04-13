@@ -5,10 +5,10 @@ import math
 import torch.nn.functional as F
 from torch.autograd import Variable
 from copy import deepcopy
-from Utils import GaussianBlur, batch_eig2x2, line_prepender, batched_forward
-from LAF import LAFs2ell,abc2A, angles2A, generate_patch_grid_from_normalized_LAFs, extract_patches, get_inverted_pyr_index, denormalizeLAFs, extract_patches_from_pyramid_with_inv_index, rectifyAffineTransformationUpIsUp
-from LAF import get_pyramid_and_level_index_for_LAFs, normalizeLAFs, checkTouchBoundary
-from HandCraftedModules import HessianResp, AffineShapeEstimator, OrientationDetector, ScalePyramid, NMS3dAndComposeA,NMS3dAndComposeAAff
+from affnet.examples.hesaffnet.Utils import GaussianBlur, batch_eig2x2, line_prepender, batched_forward
+from affnet.examples.hesaffnet.LAF import LAFs2ell,abc2A, angles2A, generate_patch_grid_from_normalized_LAFs, extract_patches, get_inverted_pyr_index, denormalizeLAFs, extract_patches_from_pyramid_with_inv_index, rectifyAffineTransformationUpIsUp
+from affnet.examples.hesaffnet.LAF import get_pyramid_and_level_index_for_LAFs, normalizeLAFs, checkTouchBoundary
+from affnet.examples.hesaffnet.HandCraftedModules import HessianResp, AffineShapeEstimator, OrientationDetector, ScalePyramid, NMS3dAndComposeA,NMS3dAndComposeAAff
 import time
 
 class OnePassSIR(nn.Module):
@@ -141,7 +141,7 @@ class OnePassSIR(nn.Module):
         t = time.time()
         num_features_prefilter = self.num
         responses, LAFs, final_pyr_idxs, final_level_idxs = self.multiScaleDetectorAff(x,num_features_prefilter)
-        print time.time() - t, 'detection multiscale'
+        print(time.time() - t, 'detection multiscale')
         t = time.time()
         LAFs[:,0:2,0:2] =   self.mrSize * LAFs[:,:,0:2]
         if do_ori:

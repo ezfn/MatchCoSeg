@@ -46,8 +46,8 @@ class AffineMatcher():
         self.SIFT = SIFTNet(patch_size=65, is_cuda=self.use_cuda)
         self.SIFT.eval()
 
-        self.weightd_fname = 'affnet/pretrained/AffNet.pth'
-        self.orinet_weightd_fname = 'affnet/pretrained/OriNet.pth'
+        self.weightd_fname = '/media/Media/SWDEV/repos/MatchCoSeg/affnet/pretrained/AffNet.pth'
+        self.orinet_weightd_fname = '/media/Media/SWDEV/repos/MatchCoSeg/affnet/pretrained/OriNet.pth'
 
         if not self.use_cuda:
             checkpoint = torch.load(self.weightd_fname, map_location=lambda storage, loc: storage)
@@ -111,18 +111,21 @@ class AffineMatcher():
         dists = [match[0].distance for match in good_matches]
         i1 = [match[0].queryIdx for match in good_matches]
         i2 = [match[0].trainIdx for match in good_matches]
-
-        affine_matches = dict(LAFs1=LAFs1[idxs1, :, :], LAFs2=LAFs2[idxs2, :, :], dists=dists)
-        return affine_matches, torch_patches1[i1, :, :, :], torch_patches2[i2, :, :, :]
+        affine_matches = dict(LAFs1=LAFs1[idxs1, :, :].cpu().numpy(), LAFs2=LAFs2[idxs2, :, :].cpu().numpy(), dists=dists)
+        P1 = torch_patches1[i1, :, :, :].cpu().numpy()
+        P2 = torch_patches2[i2, :, :, :].cpu().numpy()
+        if self.use_cuda:
+            torch.cuda.empty_cache()
+        return affine_matches, P1, P2
 
 if __name__ == '__main__':
     I1 = cv2.imread('affnet/test-graf/img1.png')
     from lifetobot_sdk.Geometry import image_transformations
     from lifetobot_sdk.Visualization import drawers as d
 
-    d.imshow(I2,wait_time=1)
 
-    # I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
+    I2 = cv2.imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img2.png')
+    d.imshow(I2,wait_time=1)
     aff_matcher = AffineMatcher(do_use_cuda=True)
     out_dict,P1,P2 = aff_matcher.match_images(I1,I2)
     best_match = np.argmin(out_dict['dists'])

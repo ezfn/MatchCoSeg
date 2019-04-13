@@ -1,0 +1,10 @@
+matches_file = '/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/matches.mat';
+I1 = imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img1.png');
+I2 = imread('/media/Media/SWDEV/repos/MatchCoSeg/affnet/test-graf/img6.png');
+[HstackSrc,HstackDst,srcPhaseZero, dstPhaseZero] = parseAffnetToAffineMatches(matches_file);
+
+Hhats = reshape(cell2mat(arrayfun(@(x) squeeze(HstackDst(x,:,:))/squeeze(HstackSrc(x,:,:)),1:size(HstackSrc,1),'UniformOutput',false)),3,3,size(HstackSrc,1));
+[ selectedIdxs ] = throwRedundantMatches( srcPhaseZero, dstPhaseZero, Hhats, 16);
+HstackSrc =  HstackSrc(:,:,selectedIdxs);HstackDst =  HstackDst(:,:,selectedIdxs);
+expandersList = expanderStuffParaDebug( HstackSrc, HstackDst,  INPUT.src.I, INPUT.dst.I,false);
+[ srcPtsTriplets, dstPtsTriplets, srcPtsCellAll,dstPtsCellAll,transformations] = expandersListToAffineMatchTriplets(expandersList);

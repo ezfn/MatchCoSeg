@@ -5,18 +5,20 @@ import cv2
 import scipy.io as sio
 import glob
 import os
+import torch
+dirs = glob.glob('/media/erez/MyPassport/CoSegDataPasses/hpatches-sequences-release/v_*')
+# sorted(dirs)
 aff_matcher = affine_adapted_matcher.AffineMatcher(do_use_cuda=False)
-dirs = glob.glob('/media/rd/MyPassport/CoSegDataPasses/hpatches-sequences-release/v_*')
-bad_dirs = [21]
-for currentDir in dirs[22:]:
+# bad_dirs_idxs = [21,55,57]
+for currentDir in dirs:
     print('In directory: ' + currentDir)
     I1f = os.path.join(currentDir, '1.ppm')
     for otherImgIdx in range(2, 7):
         Iotherf = os.path.join(currentDir, str(otherImgIdx) + '.ppm')
         outFilePath = os.path.join(currentDir, 'affnetMatches_' + str(otherImgIdx) + '.mat')
         out_dict, P1, P2 = aff_matcher.match_images(cv2.imread(I1f), cv2.imread(Iotherf))
-        save_dict = dict(dists=out_dict['dists'], LAFS1=out_dict['LAFs1'].cpu().numpy(),
-                         LAFS2=out_dict['LAFs2'].cpu().numpy())
+        save_dict = dict(dists=out_dict['dists'], LAFS1=out_dict['LAFs1'],
+                         LAFS2=out_dict['LAFs2'])
         sio.savemat(outFilePath, save_dict)
         print('matches saved to ' + outFilePath)
 

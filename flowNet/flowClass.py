@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import os
-from flowNet.Utils import conv,predict_flow,deconv,context_network
+from flowNet.Utils import conv,predict_flow,deconv,context_network,predict_flow_and_conf
 os.environ['PYTHON_EGG_CACHE'] = 'tmp/'  # a writable directory
 import sys
 from correlation import Correlation
@@ -27,7 +27,7 @@ class FlowNet(nn.Module):
 
     """
 
-    def __init__(self, corr_d=4):
+    def __init__(self, corr_d=4, do_conf_factor=False):
         """
         input: corr_d --- maximum displacement (for correlation. default: 4), after warping
 
@@ -61,21 +61,32 @@ class FlowNet(nn.Module):
         self.conv3_2 = conv(in_dims + self.combined_conv_acc_ch[1], self.combined_conv_ch[2], kernel_size=3, stride=1,padding=1)
         self.conv3_3 = conv(in_dims + self.combined_conv_acc_ch[2], self.combined_conv_ch[3], kernel_size=3, stride=1,padding=1)
         self.conv3_4 = conv(in_dims + self.combined_conv_acc_ch[3], self.combined_conv_ch[4], kernel_size=3, stride=1,padding=1)
-        self.predict_flow3 = predict_flow(in_dims + self.combined_conv_acc_ch[4])
-        self.deconv3 = deconv(2, 2, kernel_size=4, stride=2, padding=1)
-        self.upfeat3 = deconv(in_dims + self.combined_conv_acc_ch[4], 2, kernel_size=4, stride=2, padding=1)
-
-        in_dims = n_corr_dims + self.lvl_in_ch[2] + 2 + 2 # concatenation of {corr, src features, prev flow and prev combined features}
+        if do_conf_factor:
+            self.predict_flow3 = predict_flow_and_conf(in_dims + self.combined_conv_acc_ch[4])
+        else:
+            self.predict_flow3 = predict_flow(in_dims + self.combined_conv_acc_ch[4])
+        self.deconv3 = deconv(2+do_conf_factor, 2+do_conf_factor, kernel_size=4, stride=2, padding=1)
+        self.upfeat3 = deconv(in_dims + self.combined_conv_acc_ch[4], 2+do_conf_factor, kernel_size=4, stride=2, padding=1)
+        if do_conf_factor:
+            in_dims = n_corr_dims + self.lvl_in_ch[2] + 3 + 3 # concatenation of {corr, src features, prev flow and prev combined features}
+        else:
+            in_dims = n_corr_dims + self.lvl_in_ch[2] + 2 + 2 # concatenation of {corr, src features, prev flow and prev combined features}
         self.conv2_0 = conv(in_dims, self.combined_conv_ch[0], kernel_size=3, stride=1,padding=1)
         self.conv2_1 = conv(in_dims + self.combined_conv_acc_ch[0], self.combined_conv_ch[1], kernel_size=3, stride=1,padding=1)
         self.conv2_2 = conv(in_dims + self.combined_conv_acc_ch[1], self.combined_conv_ch[2], kernel_size=3, stride=1,padding=1)
         self.conv2_3 = conv(in_dims + self.combined_conv_acc_ch[2], self.combined_conv_ch[3], kernel_size=3, stride=1,padding=1)
         self.conv2_4 = conv(in_dims + self.combined_conv_acc_ch[3], self.combined_conv_ch[4], kernel_size=3, stride=1,padding=1)
-        self.predict_flow2 = predict_flow(in_dims + self.combined_conv_acc_ch[4])
+        if do_conf_factor:
+            self.predict_flow2 = predict_flow_and_conf(in_dims + self.combined_conv_acc_ch[4])
+        else:
+            self.predict_flow2 = predict_flow(in_dims + self.combined_conv_acc_ch[4])
         self.deconv2 = deconv(2, 2, kernel_size=4, stride=2, padding=1)
 
         self.context_net, out_planes = context_network(in_dims + self.combined_conv_acc_ch[4])
-        self.flow_from_context = predict_flow(out_planes)
+        if do_conf_factor:
+            self.flow_from_context = predict_flow_and_conf(out_planes)
+        else:
+            self.flow_from_context = predict_flow(out_planes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
@@ -103,8 +114,8 @@ class FlowNet(nn.Module):
             xx = xx.cuda()
             yy = xx.cuda()
             # grid = grid.cuda()
-        xx = Variable(xx) + flo[:, 0, :, :]
-        yy = Variable(yy) + flo[:, 1, :, :]
+        xx = Variable(xx) + flo[:, 0, None, :, :]
+        yy = Variable(yy) + flo[:, 1, None, :, :]
         # vgrid = Variable(grid) + flo
 
         # scale grid to [-1,1]
@@ -161,13 +172,14 @@ class FlowNet(nn.Module):
         # upsample the flow (each pyramid level has it's own weights!)
         up_flow3 = self.deconv3(flow3)
         # upsample the processed corr (each pyramid level has it's own weights!)
-        up_feat3 = self.upfeat3(x) # two output channels!
+        up_feat3 = self.upfeat3(x) # two/three output channels!
 
         # warp according to the estimated flow
         warp2 = self.warp(self.central_crop(c22, up_flow3.shape[2], up_flow3.shape[3]), up_flow3 * 5.0)
         c12_cropped = self.central_crop(c12, warp2.shape[2], warp2.shape[3])
         corr2 = self.corr(c12_cropped, warp2)
         corr2 = self.leakyRELU(corr2)
+        #TODO: consider also multiplying corr2 with the estimated mask at flow3[:,2,:,:]
         x = torch.cat((corr2, c12_cropped, up_flow3, up_feat3), 1)
         x = torch.cat((self.conv2_0(x), x), 1)
         x = torch.cat((self.conv2_1(x), x), 1)
