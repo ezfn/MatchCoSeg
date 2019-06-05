@@ -135,7 +135,7 @@ def flow_error(tu, tv, u, v):
     return mepe
 
 
-def flow_to_image(flow):
+def flow_to_image(flow, verbose=False):
     """
     Convert flow into middlebury color code image
     :param flow: optical flow map
@@ -162,7 +162,8 @@ def flow_to_image(flow):
     rad = np.sqrt(u ** 2 + v ** 2)
     maxrad = max(-1, np.max(rad))
 
-    print("max flow: %.4f\nflow range:\nu = %.3f .. %.3f\nv = %.3f .. %.3f" % (maxrad, minu,maxu, minv, maxv))
+    if verbose:
+        print("max flow: %.4f\nflow range:\nu = %.3f .. %.3f\nv = %.3f .. %.3f" % (maxrad, minu,maxu, minv, maxv))
 
     u = u/(maxrad + np.finfo(float).eps)
     v = v/(maxrad + np.finfo(float).eps)

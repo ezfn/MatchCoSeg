@@ -22,13 +22,16 @@ class L1_factored(nn.Module):
         raw_flow_loss = torch.abs((output[:,0:2,:,:] - target[:,0:2,:,:])).mean(dim=1)
         if factor_map is None:
             factored_l1_value = (raw_flow_loss * torch.sigmoid(output[:,2,:,:]) * target[:,2,:,:]).mean()
+            per_example_l1_errs = (raw_flow_loss * torch.sigmoid(output[:,2,:,:]) * target[:,2,:,:]).mean(dim=1).mean(dim=1)
+
             factor_error = self.factorLoss(output[:, 2, :, :], target[:, 2, :, :])
         else:
             factored_l1_value = (raw_flow_loss * torch.sigmoid(output[:, 2, :, :]) * target[:, 2, :, :] * factor_map).mean()
+            per_example_l1_errs = (raw_flow_loss * torch.sigmoid(output[:, 2, :, :]) * target[:, 2, :, :] * factor_map).mean(dim=1).mean(dim=1)
             factor_error = self.factorLoss(output[:, 2, :, :]*factor_map, target[:, 2, :, :]*factor_map)
-        loss_value = factored_l1_value + self.args['C'] *factor_error
+        loss_value = (1-self.args['C']) * factored_l1_value + self.args['C'] *factor_error
         epevalue = EPE(output[:,0:2,:,:], target[:,0:2,:,:])
-        return loss_value, epevalue
+        return loss_value, epevalue, per_example_l1_errs
 
 class L1(nn.Module):
     def __init__(self):

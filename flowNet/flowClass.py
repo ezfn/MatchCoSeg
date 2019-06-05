@@ -112,7 +112,7 @@ class FlowNet(nn.Module):
 
         if x.is_cuda:
             xx = xx.cuda()
-            yy = xx.cuda()
+            yy = yy.cuda()
             # grid = grid.cuda()
         xx = Variable(xx) + flo[:, 0, None, :, :]
         yy = Variable(yy) + flo[:, 1, None, :, :]
@@ -175,7 +175,7 @@ class FlowNet(nn.Module):
         up_feat3 = self.upfeat3(x) # two/three output channels!
 
         # warp according to the estimated flow
-        warp2 = self.warp(self.central_crop(c22, up_flow3.shape[2], up_flow3.shape[3]), up_flow3 * 5.0)
+        warp2 = self.warp(self.central_crop(c22, up_flow3.shape[2], up_flow3.shape[3]), up_flow3)
         c12_cropped = self.central_crop(c12, warp2.shape[2], warp2.shape[3])
         corr2 = self.corr(c12_cropped, warp2)
         corr2 = self.leakyRELU(corr2)
