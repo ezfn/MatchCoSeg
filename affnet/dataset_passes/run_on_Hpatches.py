@@ -9,7 +9,8 @@ import torch
 dirs = glob.glob('/media/erez/MyPassport/CoSegDataPasses/hpatches-sequences-release/v_*')
 # sorted(dirs)
 aff_matcher = affine_adapted_matcher.AffineMatcher(do_use_cuda=False)
-# bad_dirs_idxs = [21,55,57]
+dirs = glob.glob('/media/rd/MyPassport/CoSegDataPasses/hpatches-sequences-release/v_*')
+bad_dirs = [21]
 for currentDir in dirs:
     print('In directory: ' + currentDir)
     I1f = os.path.join(currentDir, '1.ppm')

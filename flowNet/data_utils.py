@@ -12,6 +12,9 @@ from flowNet import recordReader
 import random
 import math
 from threading import Thread
+from lifetobot_sdk.Geometry.coordinate_transformations import homogenous_transform_grid
+from lifetobot_sdk.Geometry.image_transformations import homogenous_transform_get_patch_from_tgt
+from lifetobot_sdk.Visualization import drawers as d
 
 
 
@@ -312,3 +315,41 @@ class MatlabBasedCosegDataset(dataset.Dataset):
         sample = self.transform(sample)
         self.last_sample = sample
         return sample
+
+def produce_warped_example(srcCenter, Ha, patchSize, flow_dict, do_produce_gt=True):
+    # targetImageSize = size(flowExample.Idst);
+    xStart = int(srcCenter[0] - patchSize[1] / 2)
+    xEnd = xStart + patchSize[1]
+    yStart = int(srcCenter[1] - patchSize[0] / 2)
+    yEnd = yStart + patchSize[0]
+    if np.logical_or.reduce((yStart<0, xStart<0, yEnd > flow_dict['xx_tgt'].shape[0], xEnd > flow_dict['xx_tgt'].shape[1])):
+        return None
+    Xp_dst = flow_dict['xx_tgt'][yStart:yEnd, xStart:xEnd]
+    Yp_dst = flow_dict['yy_tgt'][yStart:yEnd, xStart:xEnd]
+    # Xq, Yq = np.meshgrid(range(xStart,xEnd), range(yStart,yEnd))
+    patch_from_tgt, XXproj, YYproj = homogenous_transform_get_patch_from_tgt(flow_dict['tgt_img'],Ha, [xStart,yStart,xEnd,yEnd])
+    srcPatch = flow_dict['src_img'][yStart:yEnd, xStart:xEnd, :]
+    patch_from_tgt[np.isnan(patch_from_tgt)] = 127
+    if do_produce_gt:
+        srcMask = flow_dict['occ_mask'][yStart:yStart+patchSize[0], xStart:xStart+patchSize[1]]
+        flowXX = Xp_dst - XXproj
+        flowYY = Yp_dst - YYproj
+        srcMask = np.logical_not(np.logical_or(srcMask[:, :, 0], np.isnan(patch_from_tgt[:, :, 0])))
+        grad_metric = get_gradient_metrics(srcPatch, 24)
+        loss_factor = srcMask*grad_metric
+        example = dict(flowXX=flowXX, flowYY=flowYY, srcMask=srcMask, lossFactor=loss_factor,
+                       src_patch=srcPatch, tgt_patch=patch_from_tgt, Ha=Ha, src_center=srcCenter)
+    else:
+        example = dict(flowXX=None, flowYY=None, srcMask=None, lossFactor=None,
+                       src_patch=srcPatch, tgt_patch=patch_from_tgt, Ha=Ha, src_center=srcCenter)
+    return example
+
+
+
+def get_gradient_metrics(I,extent):
+    xx = np.array(range(-extent,extent+1))
+    gX = np.exp(-xx**2 / (0.5 * (extent **2)))
+    gX = gX / np.sum(gX);
+    kernel = np.outer(gX,gX)
+    If = cv2.filter2D(I, I.shape[2], kernel)
+    return np.sum(If,axis=2)

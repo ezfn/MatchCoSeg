@@ -187,6 +187,7 @@ def writeFloat(name, data):
 
 if __name__ == '__main__':
     import cv2
+    import os
     # f12 = read('/home/erez/Downloads/Sampler/FlyingThings3D/optical_flow/forward/0006.pfm');
     # f23 = read('/home/erez/Downloads/Sampler/FlyingThings3D/optical_flow/forward/0007.pfm');
     # image_size = f12.shape[:-1]
@@ -200,11 +201,11 @@ if __name__ == '__main__':
     # I3 = read('/home/erez/Downloads/Sampler/FlyingThings3D/RGB_cleanpass/left/0008.png')
     # I1_est = cv2.remap(I3, XX+X13_est, YY+Y13_est, cv2.INTER_LINEAR)
     # I1 = read('/home/erez/Downloads/Sampler/FlyingThings3D/RGB_cleanpass/left/0006.png')
-
-    f12 = read('/home/erez/Downloads/SINTEL/training/flow/ambush_5/frame_0001.flo');
-    f23 = read('/home/erez/Downloads/SINTEL/training/flow/ambush_5/frame_0002.flo');
-    occ12 = read('/home/erez/Downloads/SINTEL/training/occlusions/ambush_5/frame_0001.png')
-    occ23 = read('/home/erez/Downloads/SINTEL/training/occlusions/ambush_5/frame_0003.png')
+    sintel_dir = '/media/rd/MyPassport/CoSegDataPasses/MPI_SINTEL_7Z'
+    f12 = read(os.path.join(sintel_dir, 'training/flow/ambush_5/frame_0001.flo'));
+    f23 = read(os.path.join(sintel_dir, 'training/flow/ambush_5/frame_0002.flo'))
+    occ12 = read(os.path.join(sintel_dir, 'training/occlusions/ambush_5/frame_0001.png'))
+    occ23 = read(os.path.join(sintel_dir, 'training/occlusions/ambush_5/frame_0002.png'))
     image_size = f12.shape[:-1]
     XX, YY = np.meshgrid(np.arange(0, image_size[1], 1), np.arange(0, image_size[0], 1))
     XX = XX.astype(np.float32)
@@ -215,15 +216,22 @@ if __name__ == '__main__':
     mask_all = (mask_23est +  occ12) > 0
     X13_est = f12[:, :, 0] + X23_est
     Y13_est = f12[:, :, 1] + Y23_est
-    X13_est[mask_23est[:] > 0] = np.nan
-    Y13_est[mask_23est[:] > 0] = np.nan
-    I3 = read('/home/erez/Downloads/SINTEL/training/final/ambush_5/frame_0003.png')
-    I1_est = cv2.remap(I3, XX+X13_est, YY+Y13_est, cv2.INTER_LINEAR)
-    I1 = read('/home/erez/Downloads/SINTEL/training/final/ambush_5/frame_0001.png')
+    # X13_est[mask_23est[:] > 0] = np.nan
+    # Y13_est[mask_23est[:] > 0] = np.nan
+    I2 = read(os.path.join(sintel_dir, 'training/final/ambush_5/frame_0002.png'))
+    I3 = read(os.path.join(sintel_dir, 'training/final/ambush_5/frame_0003.png'))
+    I1_est0 = cv2.remap(I2, XX+f12[:, :, 0], YY+f12[:, :, 1], cv2.INTER_LINEAR)
+    I1_est0[occ12 > 0] = 0
+    X = XX+X13_est;Y = YY+Y13_est;
+    X[mask_all>0] = np.nan;Y[mask_all>0] = np.nan;
+    I1_est = cv2.remap(I3, X, Y, cv2.INTER_LINEAR)
+    I1 = read(os.path.join(sintel_dir, 'training/final/ambush_5/frame_0001.png'))
     from lifetobot_sdk.Visualization import drawers as d
-    I1_est[occ12>0] = 0
+    I1_est[mask_all>0] = 0
     d.imshow(I1_est,0,'est')
     d.imshow(I1, 0, 'orig')
     I1[mask_all] = 0
     d.imshow(I1, 0,'orig_masked')
 
+    from scipy.interpolate import griddata
+    mask2_est = griddata(((XX+f12[:, :, 0])[:],(YY+f12[:, :, 1])[:]),occ12[:],(XX,YY), method='linear')
