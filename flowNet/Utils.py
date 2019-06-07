@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torchvision
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=0, dilation=1):
     return nn.Sequential(
         nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
@@ -17,6 +17,18 @@ def predict_flow_and_conf(in_planes):
 def deconv(in_planes, out_planes, kernel_size=4, stride=2, padding=1):
     return nn.ConvTranspose2d(in_planes, out_planes, kernel_size, stride, padding, bias=True)
 
+def depthwise_deconv(in_planes, out_planes, kernel_size=4, stride=2, padding=1):
+    return nn.ConvTranspose2d(in_planes, out_planes, kernel_size, stride, padding,
+                              groups=in_planes, bias=True)
+
+def upsize_conv(in_planes, out_planes, kernel_size=4, scale_factor=2, padding=1):
+    return nn.Sequential(
+        nn.UpsamplingNearest2d(scale_factor=scale_factor,align_corners=True),
+        nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=1, padding=padding)
+    )
+
+def upsize_linear(scale_factor=2):
+    return nn.UpsamplingBilinear2d(scale_factor=scale_factor)
 
 def context_network(in_planes):
     out_planes = 32
