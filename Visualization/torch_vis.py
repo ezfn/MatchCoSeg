@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 from lifetobot_sdk.Visualization import drawers
 from affnet.dataset_passes import flowlib
 import numpy as np
+from flowNet.Utils import upsize_conv
 def plot_3ch_kernels(tensor, num_cols=6):
     tensor = tensor.detach().cpu().numpy()
     if not tensor.ndim==4:

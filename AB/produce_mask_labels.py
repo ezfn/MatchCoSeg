@@ -9,7 +9,7 @@ import os
 import glob
 import csv
 
-root_dir = '/media/Media/MEDIA/datasets'
+root_dir = '/home/rd/Downloads'
 train_dir = os.path.join(root_dir, 'images/train')
 test_dir = os.path.join(root_dir, 'images/test')
 test_labels_file = os.path.join(root_dir, 'images/test_data.txt')
@@ -28,21 +28,39 @@ test_labels = test_labels[1:]
 
 
 
-for label in test_labels:
-    ellipse_params = np.array(list(map(float, label[1:])))
-    I = cv2.imread(os.path.join(root_dir, label[0].split(' ')[0]))
+for label_idx, label in enumerate(test_labels):
+    Iout = np.zeros((50, 50), dtype=np.uint8)
     is_ellipse = os.path.join(label[0].split(' ')[1])
-    Iout = np.zeros_like(I)
-    cv2.ellipse(img=Iout, center=(int(ellipse_params[0]), int(ellipse_params[1])),
-                axes=(int(ellipse_params[3]), int(ellipse_params[4])), angle=int(ellipse_params[2]),
-                startAngle=0, endAngle=360, color=(255, 255, 255), thickness=1)
-    Iout = cv2.blur(Iout,(3,3))
     if is_ellipse == 'True':
-      pass
-
+        ellipse_params = np.array(list(map(float, label[1:])))
+        # I = cv2.imread(os.path.join(root_dir, label[0].split(' ')[0]))
+        cv2.ellipse(img=Iout, center=(int(ellipse_params[0]), int(ellipse_params[1])),
+                    axes=(int(ellipse_params[3]), int(ellipse_params[4])), angle=int(ellipse_params[2]),
+                    startAngle=0, endAngle=360, color=(255, 255, 255), thickness=1)
+        Iout = cv2.blur(Iout, (3, 3))
     else:
         pass
 
+    Iout_file = os.path.join(root_dir, label[0].split(' ')[0]).replace('.jpg', '_mask.png')
+    cv2.imwrite(Iout_file, Iout)
+    print('finished {}/{} test labels'.format(label_idx, len(test_labels)))
+
+for label_idx, label in enumerate(train_labels):
+    Iout = np.zeros((50, 50), dtype=np.uint8)
+    is_ellipse = os.path.join(label[0].split(' ')[1])
+    if is_ellipse == 'True':
+        ellipse_params = np.array(list(map(float, label[1:])))
+        # I = cv2.imread(os.path.join(root_dir, label[0].split(' ')[0]))
+        cv2.ellipse(img=Iout, center=(int(ellipse_params[0]), int(ellipse_params[1])),
+                    axes=(int(ellipse_params[3]), int(ellipse_params[4])), angle=int(ellipse_params[2]),
+                    startAngle=0, endAngle=360, color=(255, 255, 255), thickness=1)
+        Iout = cv2.blur(Iout, (3, 3))
+    else:
+        pass
+
+    Iout_file = os.path.join(root_dir, label[0].split(' ')[0]).replace('.jpg', '_mask.png')
+    cv2.imwrite(Iout_file, Iout)
+    print('finished {}/{} train labels'.format(label_idx, len(test_labels)))
 
 pass
 
