@@ -29,7 +29,7 @@ def params_estimator(in_dims, out_dims):
     return nn.Sequential(
         nn.Linear(in_dims, in_dims // 2),
         nn.LeakyReLU(inplace=True),
-        nn.Linear(in_dims // 2, 5)
+        nn.Linear(in_dims // 2, out_dims)
     )
 
 
@@ -50,7 +50,8 @@ class Detector(nn.Module):
         self.produce_mask_logits = nn.Conv2d(self.feature_map_channels // 4, 1, 1, 1, 0, bias=False)
         self.excitation_layer = excitation(self.feature_map_channels, self.feature_map_channels, 4)
         self.classifier = nn.Linear(self.feature_map_channels, 1)
-        self.params_estimator = params_estimator(self.feature_map_channels, 5)
+        self.params_estimator = params_estimator(7 * 7 * self.feature_map_channels, 5)
+        #self.params_estimator = params_estimator(self.feature_map_channels, 5)
         self.upsizer1 = upsize_conv(self.feature_map_channels, self.feature_map_channels//2, (output_mask_size//2, output_mask_size//2))
         self.upsizer2 = upsize_conv(self.feature_map_channels//2, self.feature_map_channels // 4,
                                     (output_mask_size, output_mask_size))
@@ -65,6 +66,7 @@ class Detector(nn.Module):
         # standard convolutions
         x = self.mobile_net.run_first_n_layers(x, self.n_mobilenet_layers_to_run)
         x = self.channel_conv(x)
+        x_flat = x.view(-1, 1, 1, 7 * 7 * self.feature_map_channels)
         # excitation from global information
         x_pooled = self.avgpool(x)
         x_pooled = x_pooled.permute(0, 2, 3, 1)
@@ -73,7 +75,8 @@ class Detector(nn.Module):
         x = x * excite_vec
         # classification
         class_logit = self.classifier(x_pooled)
-        param_logits = self.estimate_params(x_pooled).transpose(1, 3)
+        #param_logits = self.estimate_params(x_pooled).transpose(1, 3)
+        param_logits = self.estimate_params(x_flat).transpose(1, 3)
         # upsizing for mask
         x = self.upsizer1(x)
         x = self.upsizer2(x)
